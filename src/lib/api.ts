@@ -28,3 +28,14 @@ export async function createPost(input: {
 
   return res.json();
 }
+
+export async function deletePost(id: string) {
+  const res = await fetch(`/api/posts/${id}`, { method: 'DELETE' });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message ?? '삭제에 실패했습니다.');
+  }
+
+  return res.json(); // { ok: true }
+}
