@@ -22,6 +22,10 @@ export default function Home() {
     return <p>{(error as Error).message}</p>;
   }
 
+  if (!posts || posts.length === 0) {
+    return <p>게시글이 없습니다.</p>;
+  }
+
   return (
     <div>
       <h1>게시글 목록</h1>
