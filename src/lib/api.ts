@@ -1,21 +1,30 @@
-export async function fetchPosts() {
-  const response = await fetch('https://jsonplaceholder.typicode.com/posts');
+export type Post = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+};
 
-  if (!response.ok) {
-    throw new Error('게시글을 불러오지 못했습니다.');
-  }
-
-  return response.json();
+export async function fetchPosts(): Promise<Post[]> {
+  const res = await fetch('/api/posts');
+  if (!res.ok) throw new Error('게시글 목록을 불러오지 못했습니다.');
+  return res.json();
 }
 
-export async function fetchPost(id: string) {
-  const response = await fetch(
-    `https://jsonplaceholder.typicode.com/posts/${id}`
-  );
+export async function createPost(input: {
+  title: string;
+  body: string;
+}): Promise<Post> {
+  const res = await fetch('/api/posts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
 
-  if (!response.ok) {
-    throw new Error('게시글을 불러오지 못했습니다.');
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message ?? '게시글 등록에 실패했습니다.');
   }
 
-  return response.json();
+  return res.json();
 }

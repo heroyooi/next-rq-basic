@@ -1,39 +1,45 @@
 'use client';
 
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { fetchPosts } from '@/lib/api';
+import { fetchPosts, type Post } from '@/lib/api';
 
 export default function Home() {
   const {
-    data: posts,
+    data: posts = [],
     isLoading,
     isError,
     error,
   } = useQuery({
     queryKey: ['posts'],
     queryFn: fetchPosts,
+    staleTime: 1000 * 30,
   });
 
-  if (isLoading) {
-    return <p>불러오는 중...</p>;
-  }
+  if (isLoading) return <p>불러오는 중...</p>;
+  if (isError) return <p>{(error as Error).message}</p>;
 
-  if (isError) {
-    return <p>{(error as Error).message}</p>;
-  }
-
-  if (!posts || posts.length === 0) {
-    return <p>게시글이 없습니다.</p>;
-  }
+  const isEmpty = posts.length === 0;
 
   return (
-    <div>
+    <main style={{ padding: 16 }}>
       <h1>게시글 목록</h1>
-      <ul>
-        {posts.slice(0, 5).map((post: any) => (
-          <li key={post.id}>{post.title}</li>
-        ))}
-      </ul>
-    </div>
+      <Link href="/posts/new">+ 새 게시글 등록</Link>
+
+      {isEmpty ? (
+        <p>등록된 게시글이 없습니다.</p>
+      ) : (
+        <ul style={{ marginTop: 12 }}>
+          {posts.map((p: Post) => (
+            <li key={p.id}>
+              {p.title}{' '}
+              <small style={{ color: '#666' }}>
+                ({new Date(p.createdAt).toLocaleString()})
+              </small>
+            </li>
+          ))}
+        </ul>
+      )}
+    </main>
   );
 }
