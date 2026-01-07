@@ -3,5 +3,12 @@ export type Post = {
   title: string;
   body: string;
   createdAt: string;
-  // updatedAt?: string; (원하면 추가)
+};
+
+export type PostsPage = {
+  items: Post[];
+  page: number;
+  size: number;
+  total: number;
+  totalPages: number;
 };

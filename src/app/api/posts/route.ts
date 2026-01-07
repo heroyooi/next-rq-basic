@@ -3,27 +3,44 @@ import { readPosts, writePosts, type Post } from '@/lib/posts.db';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const q = (searchParams.get("q") ?? "").toLowerCase();
-  const sort = searchParams.get("sort") ?? "latest";
+
+  const q = (searchParams.get('q') ?? '').toLowerCase();
+  const sort = searchParams.get('sort') ?? 'latest';
+
+  const page = Math.max(1, Number(searchParams.get('page') ?? '1'));
+  const size = Math.min(
+    50,
+    Math.max(1, Number(searchParams.get('size') ?? '10'))
+  ); // 1~50 제한
 
   let posts = await readPosts();
 
-  // 검색 (제목)
-  if (q) {
-    posts = posts.filter((p) => p.title.toLowerCase().includes(q));
-  }
+  // 검색
+  if (q) posts = posts.filter((p) => p.title.toLowerCase().includes(q));
 
   // 정렬
-  if (sort === "oldest") {
+  if (sort === 'oldest') {
     posts = posts.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
-  } else if (sort === "title") {
+  } else if (sort === 'title') {
     posts = posts.sort((a, b) => a.title.localeCompare(b.title));
   } else {
-    // latest (기본)
     posts = posts.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
   }
 
-  return NextResponse.json(posts);
+  const total = posts.length;
+  const totalPages = Math.max(1, Math.ceil(total / size));
+  const safePage = Math.min(page, totalPages);
+
+  const start = (safePage - 1) * size;
+  const items = posts.slice(start, start + size);
+
+  return NextResponse.json({
+    items,
+    page: safePage,
+    size,
+    total,
+    totalPages,
+  });
 }
 
 export async function POST(req: Request) {
