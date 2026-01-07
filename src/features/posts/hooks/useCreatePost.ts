@@ -1,20 +1,17 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createPost } from "../api";
-import { postKeys } from "../keys";
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createPost } from '../api';
 
 export function useCreatePost() {
   const qc = useQueryClient();
 
   return useMutation({
     mutationFn: createPost,
+
     onSuccess: async (created) => {
-      // 즉시 반영(선택)
-      qc.setQueryData(postKeys.list(), (prev: any) => {
-        if (!Array.isArray(prev)) return prev;
-        return [created, ...prev];
+      // ✅ 17강에서는 list가 필터별로 여러 개 존재하므로 "lists 전체"를 날리는 게 안전
+      await qc.invalidateQueries({
+        queryKey: ['posts', 'list'],
       });
-      // 서버 동기화
-      await qc.invalidateQueries({ queryKey: postKeys.list() });
     },
   });
 }
