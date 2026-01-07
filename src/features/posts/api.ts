@@ -1,7 +1,11 @@
 import type { Post } from "./types";
 
-export async function fetchPosts(): Promise<Post[]> {
-  const res = await fetch("/api/posts");
+export async function fetchPosts(params?: { q?: string; sort?: string }): Promise<Post[]> {
+  const sp = new URLSearchParams();
+  if (params?.q) sp.set("q", params.q);
+  if (params?.sort) sp.set("sort", params.sort);
+
+  const res = await fetch(`/api/posts?${sp.toString()}`);
   if (!res.ok) throw new Error("게시글 목록을 불러오지 못했습니다.");
   return res.json();
 }

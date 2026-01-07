@@ -1,13 +1,29 @@
 import { NextResponse } from 'next/server';
 import { readPosts, writePosts, type Post } from '@/lib/posts.db';
 
-export async function GET() {
-  const posts = await readPosts();
-  // 최신 글이 위로 오도록
-  const sorted = [...posts].sort((a, b) =>
-    a.createdAt < b.createdAt ? 1 : -1
-  );
-  return NextResponse.json(sorted);
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const q = (searchParams.get("q") ?? "").toLowerCase();
+  const sort = searchParams.get("sort") ?? "latest";
+
+  let posts = await readPosts();
+
+  // 검색 (제목)
+  if (q) {
+    posts = posts.filter((p) => p.title.toLowerCase().includes(q));
+  }
+
+  // 정렬
+  if (sort === "oldest") {
+    posts = posts.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
+  } else if (sort === "title") {
+    posts = posts.sort((a, b) => a.title.localeCompare(b.title));
+  } else {
+    // latest (기본)
+    posts = posts.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  }
+
+  return NextResponse.json(posts);
 }
 
 export async function POST(req: Request) {
