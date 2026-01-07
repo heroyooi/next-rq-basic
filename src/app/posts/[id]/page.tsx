@@ -1,27 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { PostForm } from "@/features/posts/components/PostForm";
 import { usePost } from "@/features/posts/hooks/usePost";
 import { useUpdatePost } from "@/features/posts/hooks/useUpdatePost";
+import { useToast } from "@/components/ToastProvider";
 
 export default function PostDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { pushToast } = useToast();
 
   const { data: post, isLoading, isError, error } = usePost(id);
   const update = useUpdatePost(id);
-
-  const [initTitle, setInitTitle] = useState("");
-  const [initBody, setInitBody] = useState("");
-
-  useEffect(() => {
-    if (post) {
-      setInitTitle(post.title);
-      setInitBody(post.body);
-    }
-  }, [post]);
 
   if (!id) return <p>잘못된 접근입니다.</p>;
   if (isLoading) return <p>불러오는 중...</p>;
@@ -31,12 +22,21 @@ export default function PostDetailPage() {
   return (
     <main style={{ padding: 16, maxWidth: 720, margin: "0 auto" }}>
       <h1 style={{ marginBottom: 12 }}>게시글 수정</h1>
+
       <PostForm
-        initialTitle={initTitle}
-        initialBody={initBody}
+        initialTitle={post.title}
+        initialBody={post.body}
         submitText="수정 저장"
         isSubmitting={update.isPending}
-        onSubmit={(input) => update.mutate(input)}
+        onSubmit={(input) =>
+          update.mutate(input, {
+            onSuccess: () => {
+              pushToast("수정 완료!", "success");
+              router.push("/");
+            },
+            onError: (e) => pushToast((e as Error).message, "error"),
+          })
+        }
         onCancel={() => router.back()}
       />
     </main>

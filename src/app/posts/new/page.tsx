@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { PostForm } from "@/features/posts/components/PostForm";
 import { useCreatePost } from "@/features/posts/hooks/useCreatePost";
+import { useToast } from "@/components/ToastProvider";
 
 export default function NewPostPage() {
   const router = useRouter();
+  const { pushToast } = useToast();
   const { mutate, isPending } = useCreatePost();
 
   return (
@@ -14,7 +16,13 @@ export default function NewPostPage() {
       <PostForm
         submitText="등록하기"
         isSubmitting={isPending}
-        onSubmit={(input) => mutate(input, { onSuccess: () => router.push("/") })}
+        onSubmit={(input) => mutate(input, {
+          onSuccess: () => {
+            pushToast("등록 완료!", "success");
+            router.push("/");
+          },
+          onError: (e) => pushToast((e as Error).message, "error"),
+        })}
         onCancel={() => router.back()}
       />
     </main>

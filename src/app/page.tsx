@@ -4,30 +4,62 @@ import Link from "next/link";
 import { PostList } from "@/features/posts/components/PostList";
 import { usePosts } from "@/features/posts/hooks/usePosts";
 import { useDeletePost } from "@/features/posts/hooks/useDeletePost";
+import { Skeleton } from "@/components/Skeleton";
+import { ErrorState } from "@/components/ErrorState";
+import { useToast } from "@/components/ToastProvider";
 
 export default function Home() {
-  const { data: posts = [], isLoading, isError, error, isFetching } = usePosts();
+  const { pushToast } = useToast();
+
+  const postsQuery = usePosts();
   const del = useDeletePost();
 
-  if (isLoading) return <p>불러오는 중...</p>;
-  if (isError) return <p>{(error as Error).message}</p>;
+  // 삭제 성공/실패 피드백(실무 감각)
+  const onDelete = (id: string) => {
+    del.mutate(id, {
+      onSuccess: () => pushToast("삭제 완료!", "success"),
+      onError: (e) => pushToast((e as Error).message, "error"),
+    });
+  };
+
+  if (postsQuery.isLoading) {
+    return (
+      <main style={{ padding: 16 }}>
+        <h1>게시글 목록</h1>
+        <div style={{ display: "grid", gap: 10, marginTop: 12 }}>
+          <Skeleton height={18} width={220} />
+          <Skeleton height={52} />
+          <Skeleton height={52} />
+          <Skeleton height={52} />
+        </div>
+      </main>
+    );
+  }
+
+  if (postsQuery.isError) {
+    return (
+      <main style={{ padding: 16 }}>
+        <h1>게시글 목록</h1>
+        <ErrorState
+          message={(postsQuery.error as Error).message}
+          onRetry={() => postsQuery.refetch()}
+        />
+      </main>
+    );
+  }
 
   return (
     <main style={{ padding: 16 }}>
       <h1 style={{ display: "flex", gap: 8, alignItems: "center" }}>
         게시글 목록
-        {isFetching && <small style={{ color: "#999" }}>동기화 중...</small>}
+        {postsQuery.isFetching && <small style={{ color: "#999" }}>동기화 중...</small>}
       </h1>
 
       <div style={{ display: "flex", gap: 12, marginBottom: 12 }}>
         <Link href="/posts/new">+ 새 게시글 등록</Link>
       </div>
 
-      <PostList
-        posts={posts}
-        isDeleting={del.isPending}
-        onDelete={(id) => del.mutate(id)}
-      />
+      <PostList posts={postsQuery.data ?? []} isDeleting={del.isPending} onDelete={onDelete} />
     </main>
   );
 }
