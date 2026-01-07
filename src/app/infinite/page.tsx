@@ -6,6 +6,8 @@ import { useMemo, useState, useRef } from 'react';
 import { PostList } from '@/features/posts/components/PostList';
 import { useInfinitePosts } from '@/features/posts/hooks/useInfinitePosts';
 import { useIntersection } from '@/hooks/useIntersection';
+import { useDeletePostInfinite } from '@/features/posts/hooks/useDeletePostInfinite';
+import { useToast } from '@/components/ToastProvider';
 
 import { Skeleton } from '@/components/Skeleton';
 import { ErrorState } from '@/components/ErrorState';
@@ -26,6 +28,9 @@ export default function InfinitePage() {
 
   const total = query.data?.pages?.[0]?.total ?? 0;
   const loaded = posts.length;
+
+  const { pushToast } = useToast();
+  const del = useDeletePostInfinite();
 
   useIntersection(
     sentinelRef,
@@ -114,7 +119,16 @@ export default function InfinitePage() {
         </small>
       </div>
 
-      <PostList posts={posts} />
+      <PostList
+        posts={posts}
+        isDeleting={del.isPending}
+        onDelete={(id) =>
+          del.mutate(id, {
+            onSuccess: () => pushToast('삭제 완료!', 'success'),
+            onError: (e) => pushToast((e as Error).message, 'error'),
+          })
+        }
+      />
 
       {/* 더 보기 */}
       <div style={{ marginTop: 12 }}>
